@@ -1,12 +1,17 @@
 package org.acme;
 
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.acme.dto.ConsultaBoletoDTO;
+import org.acme.dto.ConsultaResponseDTO;
+import org.acme.dto.PaymentResponseDTO;
 import org.acme.dto.TokenDTO;
+import org.acme.model.Payment;
+import org.acme.model.Token;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @Path("/api")
@@ -28,9 +33,15 @@ public class GreetingResource {
     @GET
     @Path("/token")
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response gerarToken() {
-        TokenDTO token = getToken();
-        return Response.ok(token).build();
+        TokenDTO tokenDTO = getToken();
+
+        Token tokenEntity = new Token();
+        tokenEntity.setDsToken(tokenDTO.getAccessToken());
+        tokenEntity.persist();
+
+        return Response.ok(tokenDTO).build();
     }
 
     @POST
@@ -39,7 +50,7 @@ public class GreetingResource {
     public Response consultDadosConta(ConsultaBoletoDTO consultaBoletoDTO){
 
         TokenDTO tokenDTO = getToken();
-        String response = restClient.consultarDadosConta("Bearer " + tokenDTO.getAccessToken() , consultaBoletoDTO);
+        ConsultaResponseDTO response = restClient.consultarDadosConta("Bearer " + tokenDTO.getAccessToken() , consultaBoletoDTO);
         return Response.ok(response).build();
     }
 
@@ -47,10 +58,19 @@ public class GreetingResource {
     @Path("/pagamento")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response efeturarPagamento(ConsultaBoletoDTO consultaBoletoDTO){
 
         TokenDTO tokenDTO = getToken();
-        String response = restClient.EfetuarPagamento("Bearer " + tokenDTO.getAccessToken(), consultaBoletoDTO);
+        PaymentResponseDTO response = restClient.EfetuarPagamento("Bearer " + tokenDTO.getAccessToken(), consultaBoletoDTO);
+
+        Payment paymenteEntity = new Payment();
+        paymenteEntity.setAmount(consultaBoletoDTO.getBill().getNmValue());
+        paymenteEntity.setDigitable(consultaBoletoDTO.getData().getDsDigitable());
+        paymenteEntity.setReceipt(response.getReceipt().getReceiptformatted());
+        paymenteEntity.persist();
+
+
         return Response.ok(response).build();
     }
 }
