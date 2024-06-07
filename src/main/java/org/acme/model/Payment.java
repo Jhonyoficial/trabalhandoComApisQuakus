@@ -3,13 +3,15 @@ package org.acme.model;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
+@Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "payment")
-@Data
 public class Payment extends PanacheEntityBase {
 
     @Id

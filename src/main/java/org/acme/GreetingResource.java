@@ -12,6 +12,7 @@ import org.acme.dto.PaymentResponseDTO;
 import org.acme.dto.TokenDTO;
 import org.acme.model.Payment;
 import org.acme.model.Token;
+import org.acme.repository.RepositoryPayment;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @Path("/api")
@@ -20,6 +21,9 @@ public class GreetingResource {
     @Inject
     @RestClient
     MyRemoteService restClient;
+
+    @Inject
+    RepositoryPayment paymentRepository;
 
     public TokenDTO getToken(){
         Form form = new Form();
@@ -68,9 +72,40 @@ public class GreetingResource {
         paymenteEntity.setAmount(consultaBoletoDTO.getBill().getNmValue());
         paymenteEntity.setDigitable(consultaBoletoDTO.getData().getDsDigitable());
         paymenteEntity.setReceipt(response.getReceipt().getReceiptformatted());
-        paymenteEntity.persist();
+        paymentRepository.persist(paymenteEntity);
 
 
         return Response.ok(response).build();
+    }
+
+    @GET
+    @Path("/pagamento/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response listPayments(){
+        return Response.ok().entity(paymentRepository.listAll()).build();
+    }
+
+
+    @GET
+    @Path("/pagamento/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response findById(@PathParam("id") Long id ){
+        return Response.ok().entity(paymentRepository.findById(id)).build();
+    }
+
+    @DELETE
+    @Path("/pagamento/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response delete(@PathParam("id") Long id){
+        return Response.ok().entity(paymentRepository.deleteById(id)).build();
+    }
+
+    @PATCH
+    @Path("/pagamento/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response update(@PathParam("id") String id) {
+        return Response.ok().entity(paymentRepository.update(id)).build();
     }
 }
