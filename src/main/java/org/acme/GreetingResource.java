@@ -1,0 +1,56 @@
+package org.acme;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.acme.dto.ConsultaBoletoDTO;
+import org.acme.dto.TokenDTO;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+
+@Path("/api")
+public class GreetingResource {
+
+    @Inject
+    @RestClient
+    MyRemoteService restClient;
+
+    public TokenDTO getToken(){
+        Form form = new Form();
+        form.param("client_id", "41b44ab9a56440.teste.celcoinapi.v5");
+        form.param("grant_type", "client_credentials");
+        form.param("client_secret", "e9d15cde33024c1494de7480e69b7a18c09d7cd25a8446839b3be82a56a044a3");
+
+        return restClient.getToken(form);
+    }
+
+    @GET
+    @Path("/token")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response gerarToken() {
+        TokenDTO token = getToken();
+        return Response.ok(token).build();
+    }
+
+    @POST
+    @Path("/consulta")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response consultDadosConta(ConsultaBoletoDTO consultaBoletoDTO){
+
+        TokenDTO tokenDTO = getToken();
+        String response = restClient.consultarDadosConta("Bearer " + tokenDTO.getAccessToken() , consultaBoletoDTO);
+        return Response.ok(response).build();
+    }
+
+    @POST
+    @Path("/pagamento")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response efeturarPagamento(ConsultaBoletoDTO consultaBoletoDTO){
+
+        TokenDTO tokenDTO = getToken();
+        String response = restClient.EfetuarPagamento("Bearer " + tokenDTO.getAccessToken(), consultaBoletoDTO);
+        return Response.ok(response).build();
+    }
+}
